@@ -21,20 +21,20 @@ class window:
     textDimensions = (72, 20)
     textBG = pg.Surface(textDimensions); textBG.fill("white")
 
-# Getting the information from the data.txt file and parsing it into 3 lists. Tickers, last bought/sold, prices at which bought/sold.
-f = open(os.getcwd() + "/data.txt", "r"); temp = f.readlines(); tickers = []; bs = []; prices = [];
-# Initializing variables for the while loop to use.
-previousPrice = 0; priceChange = 0; txtLST = []; color = ""
-
-# Parsing the information in the text file into the 3 lists.
-for x in temp:
-    x = x.split(":"); tickers.append(x[0])
-    x = x[1].split(","); bs.append(x[0]); prices.append(float(x[1].replace("\n", "")))
-
 run = True
 
 # Main loop
 while run:
+
+    # Getting the information from the data.txt file and parsing it into 3 lists. Tickers, last bought/sold, prices at which bought/sold.
+    f = open(os.getcwd() + "/data.txt", "r"); temp = f.readlines(); tickers = []; bs = []; prices = [];
+    # Initializing variables for the while loop to use.
+    previousPrice = 0; priceChange = 0; txtLST = []; color = ""
+
+    # Parsing the information in the text file into the 3 lists.
+    for x in temp:
+        x = x.split(":"); tickers.append(x[0])
+        x = x[1].split(","); bs.append(x[0]); prices.append(float(x[1].replace("\n", "")))
 
     # Pygame event loop to make the screen show up.
     for event in pg.event.get():
