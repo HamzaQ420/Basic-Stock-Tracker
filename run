@@ -1,0 +1,4 @@
+#! /bin/bash
+
+cd ~/Desktop/Programming/Python/Stock
+python3 main.py
