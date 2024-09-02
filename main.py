@@ -22,9 +22,15 @@ class window:
     textBG = pg.Surface(textDimensions); textBG.fill("white")
 
 run = True
-
 # Main loop
 while run:
+
+    # Pygame event loop to make the screen show up.
+    for event in pg.event.get():
+        if event.type == pg.quit: pg.quit(); exit()
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_ESCAPE:
+                pg.quit(); quit()
 
     # Getting the information from the data.txt file and parsing it into 3 lists. Tickers, last bought/sold, prices at which bought/sold.
     f = open(os.getcwd() + "/data.txt", "r"); temp = f.readlines(); tickers = []; bs = []; prices = [];
@@ -35,13 +41,6 @@ while run:
     for x in temp:
         x = x.split(":"); tickers.append(x[0])
         x = x[1].split(","); bs.append(x[0]); prices.append(float(x[1].replace("\n", "")))
-
-    # Pygame event loop to make the screen show up.
-    for event in pg.event.get():
-        if event.type == pg.quit: pg.quit(); exit()
-        if event.type == pg.KEYDOWN:
-            if event.key == pg.K_ESCAPE:
-                pg.quit(); quit()
 
     # Below is a delay function in case you don't want the code running every second.
     #time.sleep(5)
@@ -90,6 +89,7 @@ while run:
         # Adding all the information to be printed to the screen to a list so they are all in one place to be referenced.
         txtLST.append([text, str(priceChange), val, price])
 
+    # Rendering Work
     window.screen.blit(window.bg, (0, 0))
     for n in txtLST:
         # Rendering the ticker information.
@@ -97,7 +97,8 @@ while run:
         window.screen.blit(window.text, (5, txtLST.index(n) * 24))
 
         # Rendering the price change percentage (priceChange).
-        if "+" in n[1]: color = "green"
+        if float(n[1]) == 0: color = "yellow"
+        elif "+" in n[1]: color = "green"
         else: color = "red"
         window.text = window.font.render(n[1], True, color)
         window.screen.blit(window.text, (510, txtLST.index(n) * 24))
