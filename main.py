@@ -1,5 +1,4 @@
-import yfinance as yf; from datetime import datetime; import time; import robin_stocks as robin; import os;
-import pygame as pg
+import yfinance as yf; from datetime import datetime; import time; import os; import pygame as pg;
 
 pg.init()
 # Setting up the pygame window for the UI, technically just a viewing screen right now though.
@@ -21,13 +20,13 @@ class window:
     textDimensions = (72, 20)
     textBG = pg.Surface(textDimensions); textBG.fill("white")
 
-run = True
+run = True;
 # Main loop
 while run:
-
     # Pygame event loop to make the screen show up.
     for event in pg.event.get():
-        if event.type == pg.quit: pg.quit(); exit()
+        if event.type == pg.quit:
+            pg.quit(); exit()
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE:
                 pg.quit(); quit()
@@ -85,23 +84,28 @@ while run:
         else: val = "Keep"
 
         # Formatting the ticker information to print to the screen.
-        text = str(symbol + " : " + price + " " + datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
+        text = str(symbol + " : " + price)
+
         # Adding all the information to be printed to the screen to a list so they are all in one place to be referenced.
-        txtLST.append([text, str(priceChange), val, price])
+        txtLST.append([text, str(priceChange), val, price, yf.Ticker(y).info["fiftyTwoWeekHigh"], yf.Ticker(y).info["fiftyTwoWeekLow"]])
 
     # Rendering Work
     window.screen.blit(window.bg, (0, 0))
+
+    window.text = window.font.render(datetime.now().strftime("%m/%d/%Y %H:%M:%S"), True, "White")
+    window.screen.blit(window.text, (260, 5)); vshift = 40
+
     for n in txtLST:
         # Rendering the ticker information.
         window.text = window.font.render(n[0], True, "white")
-        window.screen.blit(window.text, (5, txtLST.index(n) * 24))
+        window.screen.blit(window.text, (2, txtLST.index(n) * 24 + vshift))
 
         # Rendering the price change percentage (priceChange).
         if float(n[1]) == 0: color = "yellow"
         elif "+" in n[1]: color = "green"
         else: color = "red"
         window.text = window.font.render(n[1], True, color)
-        window.screen.blit(window.text, (510, txtLST.index(n) * 24))
+        window.screen.blit(window.text, (222, txtLST.index(n) * 24 + vshift))
 
         # Rendering whether to buy, keep, or sell the stock.
         if n[2] == "Keep": color = "yellow"
@@ -109,12 +113,16 @@ while run:
         else: color = "red"
         window.text = window.font.render(str(n[2]), True, "black")
         window.textBG.fill(color)
-        window.screen.blit(window.textBG, (620, txtLST.index(n) * 24 + 5))
-        window.screen.blit(window.text, (625, txtLST.index(n) * 24))
+        window.screen.blit(window.textBG, (337, txtLST.index(n) * 24 + 5 + vshift))
+        window.screen.blit(window.text, (342, txtLST.index(n) * 24 + vshift))
 
-        # Rendering the current stock price.
-        window.text = window.font.render(n[3], True, "white")
-        window.screen.blit(window.text, (700, txtLST.index(n) * 24))
+        # Rendering the weekly highest stock price.
+        window.text = window.font.render("52 High: " + str(n[4]), True, "light green")
+        window.screen.blit(window.text, (417, txtLST.index(n) * 24 + vshift))
+
+        # Rendering the weekly low stock price.
+        window.text = window.font.render("Low: " + str(n[5]), True, "#FF474C")
+        window.screen.blit(window.text, (632, txtLST.index(n) * 24 + vshift))
 
     pg.display.update()
     window.clock.tick(60)
