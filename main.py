@@ -1,4 +1,4 @@
-import yfinance as yf; from datetime import datetime; import time; import os; import pygame as pg;
+import yfinance as yf; from datetime import datetime; import time; import os; import pygame as pg; import tkinter as tk; import tkinterRunner
 
 pg.init()
 # Setting up the pygame window for the UI, technically just a viewing screen right now though.
@@ -20,7 +20,18 @@ class window:
     textDimensions = (72, 20)
     textBG = pg.Surface(textDimensions); textBG.fill("white")
 
-run = True;
+def writeToFile():
+    info = tkinterRunner.returnItems()
+    ticker = info[0].upper(); price = float(info[1]); bs = "S" if info[2] == "Sold" else "B"
+    stockInfo = ticker + ":" + bs + "," + str(price)
+
+    f = open(os.getcwd() + "/data.txt", "r"); lines = f.readlines(); f.close()
+    string = ""
+    for x in lines: string += x
+    f = open(os.getcwd() + "/data.txt", "w"); f.write(string + "\n" + stockInfo)
+
+# Setting up tkinter for the entry message boxes.
+run = True
 # Main loop
 while run:
     # Pygame event loop to make the screen show up.
@@ -29,7 +40,10 @@ while run:
             pg.quit(); exit()
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE:
-                pg.quit(); quit()
+                pg.quit(); exit()
+            if event.key == pg.K_TAB:
+                tkinterRunner.main()
+                writeToFile()
 
     # Getting the information from the data.txt file and parsing it into 3 lists. Tickers, last bought/sold, prices at which bought/sold.
     f = open(os.getcwd() + "/data.txt", "r"); temp = f.readlines(); tickers = []; bs = []; prices = [];
@@ -38,6 +52,7 @@ while run:
 
     # Parsing the information in the text file into the 3 lists.
     for x in temp:
+        if x == "\n": continue
         x = x.split(":"); tickers.append(x[0])
         x = x[1].split(","); bs.append(x[0]); prices.append(float(x[1].replace("\n", "")))
 
