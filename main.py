@@ -20,15 +20,22 @@ class window:
     textDimensions = (72, 20)
     textBG = pg.Surface(textDimensions); textBG.fill("white")
 
+# Taking information from the tkinter input window, parsing it, then writing it to our data.txt file.
 def writeToFile():
+    flag = False
     info = tkinterRunner.returnItems()
     ticker = info[0].upper(); price = float(info[1]); bs = "S" if info[2] == "Sold" else "B"
     stockInfo = ticker + ":" + bs + "," + str(price)
 
     f = open(os.getcwd() + "/data.txt", "r"); lines = f.readlines(); f.close()
     string = ""
-    for x in lines: string += x
-    f = open(os.getcwd() + "/data.txt", "w"); f.write(string + "\n" + stockInfo)
+    for x in lines:
+        if ticker in x:
+          string += stockInfo + "\n"
+          flag = True
+        else: string += x
+    f = open(os.getcwd() + "/data.txt", "w");
+    f.write(string + "\n") if flag else f.write(string + "\n" + stockInfo)
 
 # Setting up tkinter for the entry message boxes.
 run = True
@@ -68,12 +75,9 @@ while run:
         # This loop could DEFINITELY be optimized, consider rewriting entirely.
         for x in priceInfo:
             if "currentPrice" in x:
-                if temp == x: priceUpdate = False
-                else:
-                    priceUpdate = True
-                    temp = x; price = x;
-                    price = str(round(float(price[price.index(":") + 2:]), 2))
-                    if len(price[price.index("."):]) < 3: price += "0"
+                price = x
+                price = str(round(float(price[price.index(":") + 2:]), 2))
+                if len(price[price.index("."):]) < 3: price += "0"
                 for x in symbolInfo:
                     if "symbol" in x:
                         symbol = x
@@ -84,13 +88,12 @@ while run:
                 priceChange = round(-((previousPrice - float(price)) / float(price)) * 100, 3)
                 if priceChange > 0: priceChange = "+" + str(priceChange)
                 # Printing the ticker info for each ticker in the tickers list to the terminal.
-                if priceUpdate: print(symbol, " : ", price, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), priceChange)
+                print(symbol, " : ", price, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), priceChange)
 
         # Formatting specific tickers. Ignore this, to be optimized later but for now it is hard-coded for Lucid and AMD.
         if len(price) < 6: price += (" " * (6 - len(price)))
         if len(price[price.index("."):]) < 3: price += "0"
-        if "AMD" in symbol: symbol += " "
-        if "LCID" in symbol: price = "  " + price
+        if len(symbol.replace("'", "").replace(" ", "")) == 3: symbol += " "
 
         # Checking the text file to see if a stock was recently bought or sold, then using that to figure out if the stock should be sold
         # if the price goes above 7% or bought if it dips below -7%. If neither, the option is to keep the stock.
@@ -110,6 +113,7 @@ while run:
     window.text = window.font.render(datetime.now().strftime("%m/%d/%Y %H:%M:%S"), True, "White")
     window.screen.blit(window.text, (260, 5)); vshift = 40
 
+    # Rendering work.
     for n in txtLST:
         # Rendering the ticker information.
         window.text = window.font.render(n[0], True, "white")
