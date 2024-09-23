@@ -1,4 +1,5 @@
-import yfinance as yf; from datetime import datetime; import time; import os; import pygame as pg; import tkinter as tk; import tkinterRunner
+from matplotlib.colors import LinearSegmentedColormap
+import yfinance as yf; from datetime import datetime as dt; import time; import os; import pygame as pg; import tkinter as tk; import tkinterRunner
 
 pg.init()
 # Setting up the pygame window for the UI, technically just a viewing screen right now though.
@@ -20,22 +21,56 @@ class window:
     textDimensions = (72, 20)
     textBG = pg.Surface(textDimensions); textBG.fill("white")
 
-# Taking information from the tkinter input window, parsing it, then writing it to our data.txt file.
+# Taking information from the tkinter input window, parsing it, then writing it to our stockData.txt file.
 def writeToFile():
     flag = False
     info = tkinterRunner.returnItems()
-    ticker = info[0].upper(); price = float(info[1]); bs = "S" if info[2] == "Sold" else "B"
-    stockInfo = ticker + ":" + bs + "," + str(price)
+    ticker = info[0].upper()
+    bs = "S" if info[2] == "Sold" else "B"
+    try:
+        price = float(info[1])
+        stockInfo = ticker + ":" + bs + "," + str(price)
 
-    f = open(os.getcwd() + "/data.txt", "r"); lines = f.readlines(); f.close()
-    string = ""
-    for x in lines:
-        if ticker in x:
-          string += stockInfo + "\n"
-          flag = True
-        else: string += x
-    f = open(os.getcwd() + "/data.txt", "w");
-    f.write(string + "\n") if flag else f.write(string + "\n" + stockInfo)
+        f = open(os.getcwd() + "/stockData.txt", "r"); lines = f.readlines(); f.close()
+        string = ""
+        for x in lines:
+            if ticker in x:
+              string += stockInfo + "\n"
+              flag = True
+            else: string += x
+        f = open(os.getcwd() + "/stockData.txt", "w");
+        f.write(string + "\n") if flag else f.write(string + "\n" + stockInfo); f.close()
+
+    except ValueError:
+        flag = False
+
+        startDate = dt.today().strftime('%Y-%m-%d')
+        if dt.today().weekday() == 0:
+            startDate = startDate[:-2] + str(int(startDate[-2:]) - 3)
+        elif dt.today().weekday() == 6:
+            startDate = startDate[:-2] + str(int(startDate[-2:]) - 2)
+        else:
+            startDate = startDate[:-2] + str(int(startDate[-2:]) - 1)
+
+        stock = yf.download(ticker, start=startDate, end=dt.today().strftime('%Y-%m-%d'))
+        price = stock["Close"]
+        open(os.getcwd()+ "/temp.txt", "w").truncate(0)
+        open(os.getcwd()+ "/temp.txt", "w").write(str(price))
+
+        #price = str(price[price.index(str(startDate)) + 10:])
+
+        # ***Some formatting kinks need to be worked out here, but the algorithm works.***
+
+        lines = open(os.getcwd() + "/etfData.txt", "r").readlines(); string = ""
+        for x in lines:
+            string += x
+
+        lines = open(os.getcwd() + "/temp.txt", "r").readlines(); string2 = ""
+        for x in lines:
+            if "." in x: string2 = x
+
+        stockInfo = (ticker + ":" + bs + "," + string2[14:]).replace(" ", "")
+        open(os.getcwd() + "/etfData.txt", "w").write(string + stockInfo)
 
 # Setting up tkinter for the entry message boxes.
 run = True
@@ -52,8 +87,8 @@ while run:
                 tkinterRunner.main()
                 writeToFile()
 
-    # Getting the information from the data.txt file and parsing it into 3 lists. Tickers, last bought/sold, prices at which bought/sold.
-    f = open(os.getcwd() + "/data.txt", "r"); temp = f.readlines(); tickers = []; bs = []; prices = [];
+    # Getting the information from the stockData.txt file and parsing it into 3 lists. Tickers, last bought/sold, prices at which bought/sold.
+    f = open(os.getcwd() + "/stockData.txt", "r"); temp = f.readlines(); tickers = []; bs = []; prices = [];
     # Initializing variables for the while loop to use.
     previousPrice = 0; priceChange = 0; txtLST = []; color = ""
 
@@ -88,7 +123,7 @@ while run:
                 priceChange = round(-((previousPrice - float(price)) / float(price)) * 100, 3)
                 if priceChange > 0: priceChange = "+" + str(priceChange)
                 # Printing the ticker info for each ticker in the tickers list to the terminal.
-                print(symbol, " : ", price, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), priceChange)
+                print(symbol, " : ", price, dt.now().strftime("%d/%m/%Y %H:%M:%S"), priceChange)
 
         # Formatting specific tickers. Ignore this, to be optimized later but for now it is hard-coded for Lucid and AMD.
         if len(price) < 6: price += (" " * (6 - len(price)))
@@ -110,7 +145,7 @@ while run:
     # Rendering Work
     window.screen.blit(window.bg, (0, 0))
 
-    window.text = window.font.render(datetime.now().strftime("%m/%d/%Y %H:%M:%S"), True, "White")
+    window.text = window.font.render(dt.now().strftime("%m/%d/%Y %H:%M:%S"), True, "White")
     window.screen.blit(window.text, (260, 5)); vshift = 40
 
     # Rendering work.

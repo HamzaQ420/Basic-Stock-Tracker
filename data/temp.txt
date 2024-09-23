@@ -1,0 +1,3 @@
+Date
+2024-09-20    568.25
+Name: Close, dtype: float64

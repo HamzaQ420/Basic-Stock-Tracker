@@ -1,4 +1,4 @@
-#!/Users/hamza/Desktop/Programming/Python/Stock/.venv/bin/python3
+#!/Users/hamza/Desktop/Programming/Python/Stock/.venv/bin/python3.12
 
 import datetime
 import os

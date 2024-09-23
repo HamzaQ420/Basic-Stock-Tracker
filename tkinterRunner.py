@@ -1,9 +1,10 @@
-import tkinter as tk
+import tkinter as tk; import yfinance as yf; from datetime import datetime
 
 items = []
 root = tk.Tk()
 
 def returnItems():
+    print(items)
     return items
 
 def main():
@@ -38,3 +39,9 @@ def main():
     choiceMenu.grid(row = 0, column = 2)
 
     tk.mainloop()
+
+stock = yf.download("SPY", start="2024-9-20", end="2024-9-23")
+price = stock["Close"]
+print(price)
+print(datetime.today().strftime('%Y-%m-%d'))
+print(datetime.today().weekday())
