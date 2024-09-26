@@ -1,5 +1,5 @@
-from matplotlib.colors import LinearSegmentedColormap
-import yfinance as yf; from datetime import datetime as dt; import time; import os; import pygame as pg; import tkinter as tk; import tkinterRunner
+import yfinance as yf; from datetime import datetime as dt; import time
+import os; import pygame as pg; import tkinterRunner
 
 pg.init()
 # Setting up the pygame window for the UI, technically just a viewing screen right now though.
@@ -21,56 +21,69 @@ class window:
     textDimensions = (72, 20)
     textBG = pg.Surface(textDimensions); textBG.fill("white")
 
+def etfPriceRetrieval(ticker):
+    flag = False
+
+    startDate = dt.today().strftime('%Y-%m-%d')
+    if dt.today().weekday() == 0:
+        startDate = startDate[:-2] + str(int(startDate[-2:]) - 3)
+    elif dt.today().weekday() == 6:
+        startDate = startDate[:-2] + str(int(startDate[-2:]) - 2)
+    else:
+        startDate = startDate[:-2] + str(int(startDate[-2:]) - 1)
+
+    stock = yf.download(ticker, start=startDate, end=dt.today().strftime('%Y-%m-%d'))
+    price = stock["Close"]
+    open(os.getcwd()+ "/data/temp.txt", "w").truncate(0)
+    open(os.getcwd()+ "/data/temp.txt", "w").write(str(price))
+
+    #price = str(price[price.index(str(startDate)) + 10:])
+
+    # ***Some formatting kinks need to be worked out here, but the algorithm works.***
+
+    lines = open(os.getcwd() + "/data/temp.txt", "r").readlines(); string2 = ""
+    for x in lines:
+        if "." in x: string2 = x
+
+    p = string2[14:]
+    p = str(round(float(p), 2))
+
+    return p
+
 # Taking information from the tkinter input window, parsing it, then writing it to our stockData.txt file.
 def writeToFile():
     flag = False
     info = tkinterRunner.returnItems()
     ticker = info[0].upper()
     bs = "S" if info[2] == "Sold" else "B"
+
+    # Checking if an inputted stock is a stock or an ETF by checking if finding the price normally works or not.
+    # If it doesn't, we get a ValueError and use another way.
+
     try:
         price = float(info[1])
         stockInfo = ticker + ":" + bs + "," + str(price)
 
-        f = open(os.getcwd() + "/stockData.txt", "r"); lines = f.readlines(); f.close()
+        f = open(os.getcwd() + "/data/stockData.txt", "r"); lines = f.readlines(); f.close()
         string = ""
         for x in lines:
             if ticker in x:
               string += stockInfo + "\n"
               flag = True
             else: string += x
-        f = open(os.getcwd() + "/stockData.txt", "w");
+        f = open(os.getcwd() + "/data/stockData.txt", "w");
         f.write(string + "\n") if flag else f.write(string + "\n" + stockInfo); f.close()
 
     except ValueError:
-        flag = False
+        p =  etfPriceRetrieval(ticker) + "\n"
 
-        startDate = dt.today().strftime('%Y-%m-%d')
-        if dt.today().weekday() == 0:
-            startDate = startDate[:-2] + str(int(startDate[-2:]) - 3)
-        elif dt.today().weekday() == 6:
-            startDate = startDate[:-2] + str(int(startDate[-2:]) - 2)
-        else:
-            startDate = startDate[:-2] + str(int(startDate[-2:]) - 1)
-
-        stock = yf.download(ticker, start=startDate, end=dt.today().strftime('%Y-%m-%d'))
-        price = stock["Close"]
-        open(os.getcwd()+ "/temp.txt", "w").truncate(0)
-        open(os.getcwd()+ "/temp.txt", "w").write(str(price))
-
-        #price = str(price[price.index(str(startDate)) + 10:])
-
-        # ***Some formatting kinks need to be worked out here, but the algorithm works.***
-
-        lines = open(os.getcwd() + "/etfData.txt", "r").readlines(); string = ""
+        lines = open(os.getcwd() + "/data/etfData.txt", "r").readlines(); string = ""
         for x in lines:
             string += x
 
-        lines = open(os.getcwd() + "/temp.txt", "r").readlines(); string2 = ""
-        for x in lines:
-            if "." in x: string2 = x
-
-        stockInfo = (ticker + ":" + bs + "," + string2[14:]).replace(" ", "")
-        open(os.getcwd() + "/etfData.txt", "w").write(string + stockInfo)
+        stockInfo = (ticker + ":" + bs + "," + p).replace(" ", "")
+        open(os.getcwd() + "/data/etfData.txt", "w").write(string + stockInfo)
+        open(os.getcwd()+ "/data/temp.txt", "w").truncate(0)
 
 # Setting up tkinter for the entry message boxes.
 run = True
@@ -88,7 +101,7 @@ while run:
                 writeToFile()
 
     # Getting the information from the stockData.txt file and parsing it into 3 lists. Tickers, last bought/sold, prices at which bought/sold.
-    f = open(os.getcwd() + "/stockData.txt", "r"); temp = f.readlines(); tickers = []; bs = []; prices = [];
+    f = open(os.getcwd() + "/data/stockData.txt", "r"); temp = f.readlines(); tickers = []; bs = []; prices = [];
     # Initializing variables for the while loop to use.
     previousPrice = 0; priceChange = 0; txtLST = []; color = ""
 
@@ -130,10 +143,13 @@ while run:
         if len(price[price.index("."):]) < 3: price += "0"
         if len(symbol.replace("'", "").replace(" ", "")) == 3: symbol += " "
 
+        # This is the variable for how low and how high the buy/sell should be.
+        PERCENTAGE_CHECKED = 1
+
         # Checking the text file to see if a stock was recently bought or sold, then using that to figure out if the stock should be sold
         # if the price goes above 7% or bought if it dips below -7%. If neither, the option is to keep the stock.
-        if bs[tickers.index(symbol.replace("'", "").replace(" ", ""))] == "B" and float(priceChange) > 7: val = "Sell"
-        elif bs[tickers.index(symbol.replace("'", "").replace(" ", ""))] == "S" and float(priceChange) < -7: val = "Buy"
+        if bs[tickers.index(symbol.replace("'", "").replace(" ", ""))] == "B" and float(priceChange) > PERCENTAGE_CHECKED: val = "Sell"
+        elif bs[tickers.index(symbol.replace("'", "").replace(" ", ""))] == "S" and float(priceChange) < -PERCENTAGE_CHECKED: val = "Buy"
         else: val = "Keep"
 
         # Formatting the ticker information to print to the screen.
@@ -177,6 +193,39 @@ while run:
         # Rendering the weekly low stock price.
         window.text = window.font.render("Low: " + str(n[5]), True, "#FF474C")
         window.screen.blit(window.text, (632, txtLST.index(n) * 24 + vshift))
+
+    # Rendering ETFs.
+    window.text = window.font.render("ETFs & Others", True, "white")
+    vshift += len(txtLST) * 24 + 10 + vshift
+    window.screen.blit(window.text, (300, vshift))
+    vshift += 15
+
+    etfLST = open(os.getcwd() + "/data/etfData.txt", "r").readlines()
+    tempList = []; info = []
+    for x in etfLST:
+        tempList = x.split(":")
+        tempList.append((tempList[1].split(","))[0])
+        tempList.append(tempList[1][tempList[1].index(","):].replace(",", ""))
+        tempList.pop(1)
+
+        if len(str(tempList[0])) == 3:
+            window.text = window.font.render("  \'" + tempList[0] + "\'   :", True, "white")
+        else:
+            window.text = window.font.render("\'" + tempList[0] + "\' :", True, "white")
+
+        window.screen.blit(window.text, (2, vshift + 24 * (etfLST.index(x) + 1)))
+
+        strPrice = tempList[2][:-1]
+        if len(tempList[2][:-1]) < 6: strPrice += "0"
+        strCurPrice = etfPriceRetrieval(tempList[0])
+        if len(strCurPrice) < 6: strCurPrice += "0"
+        perChange = round(((float(strCurPrice) - float(strPrice)) / float(strCurPrice)) * 100, 2)
+        if perChange >= 0: perChange = "  " + str(perChange)
+        perChange = str(perChange) + "%"
+
+        # Remove perChange from the rendering work under this line, add it to another line and render it the proper % change color.
+        window.text = window.font.render("Bought - " + strPrice + "     Last Close - " + strCurPrice + "     " + perChange, True, "white")
+        window.screen.blit(window.text, (127, vshift + 24 * (etfLST.index(x) + 1)))
 
     pg.display.update()
     window.clock.tick(60)
